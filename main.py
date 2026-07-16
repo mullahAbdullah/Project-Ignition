@@ -1,4 +1,3 @@
-from app import ai_client
 from app.lead_analyzer import analyze_lead
 from app.conversation_coach import get_next_step
 import streamlit as st
@@ -106,7 +105,7 @@ with st.sidebar:
 
     st.success("🟢 Online")
 
-    st.write("Version", "v0.3")
+    st.write("Version", "v1.0")
 
     st.write("Model", "GPT-4.1 Mini")
 
@@ -119,125 +118,121 @@ with st.sidebar:
 # Main Layout
 # ---------------------------------
 
-chat_section = st.container()
-
-st.write("")
-
 left_col, right_col = st.columns([5, 1])
 
 with left_col:
     
-# ---------------------------------
-# Chat History
-# ---------------------------------
+    # ---------------------------------
+    # Chat History
+    # ---------------------------------
 
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-            
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+                
     if not st.session_state.messages:
 
-        st.title("🤖 AI Lead Assistant")
+            st.title("🤖 AI Lead Assistant")
 
-        st.caption(
-            "Qualify leads, answer questions, and help businesses automate customer conversations."
-        )
+            st.caption(
+                "Qualify leads, answer questions, and help businesses automate customer conversations."
+            )
 
-        st.info(
-            """
-            ## Try asking something like:
+            st.info(
+                """
+                ## Try asking something like:
 
-            • Hi, I own a real estate agency with 12 employees.
+                • Hi, I own a real estate agency with 12 employees.
 
-            • I need an AI assistant for my website.
+                • I need an AI assistant for my website.
 
-            • We want to automate lead qualification.
+                • We want to automate lead qualification.
 
-            • I run a law firm and need appointment booking.
+                • I run a law firm and need appointment booking.
 
-            The assistant will automatically build a lead profile while guiding the conversation.
-            """
-        )
+                The assistant will automatically build a lead profile while guiding the conversation.
+                """
+            )
 
-        st.divider()
+            st.divider()
 
-# ---------------------------------
-# Chat Input
-# ---------------------------------
+    # ---------------------------------
+    # Chat Input
+    # ---------------------------------
 
-prompt = st.chat_input(
-    "Describe your business or ask me anything..."
-)
-
-if prompt:
-
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    st.session_state.messages.append(
-        {
-            "role": "user",
-            "content": prompt,
-        }
+    prompt = st.chat_input(
+        "Describe your business or ask me anything..."
     )
 
-    conversation = st.session_state.messages.copy()
+    if prompt:
 
-    system_prompt = get_system_prompt(mode)
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-    # Extract only the newly found information
-    profile = extract_lead_info(conversation)
+        st.session_state.messages.append(
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        )
 
-    # Merge with existing CRM profile
-    existing_profile = st.session_state.profile.copy()
+        conversation = st.session_state.messages.copy()
 
-    for key, value in profile.items():
-        if value is not None:
-            existing_profile[key] = value
+        system_prompt = get_system_prompt(mode)
 
-    st.session_state.profile = existing_profile
-    profile = existing_profile
+        # Extract only the newly found information
+        profile = extract_lead_info(conversation)
 
-    # Analyze the complete merged profile
-    analysis = analyze_lead(profile)
+        # Merge with existing CRM profile
+        existing_profile = st.session_state.profile.copy()
 
-    closing_stage = (
-        analysis["quality"] == "High"
-        and len(analysis["missing"]) <= 1
-    )
+        for key, value in profile.items():
+            if value is not None:
+                existing_profile[key] = value
 
-    with st.chat_message("assistant"):
+        st.session_state.profile = existing_profile
+        profile = existing_profile
 
-        placeholder = st.empty()
+        # Analyze the complete merged profile
+        analysis = analyze_lead(profile)
 
-        response = ""
+        closing_stage = (
+            analysis["quality"] == "High"
+            and len(analysis["missing"]) <= 1
+        )
 
-        for chunk in ai_client.generate_response(
-            system_prompt=system_prompt,
-            conversation=conversation,
-            temperature=temperature,
-            closing_stage=closing_stage,
-        ):
-            response += chunk
+        with st.chat_message("assistant"):
+
+            placeholder = st.empty()
+
+            response = ""
+
+            for chunk in ai_client.generate_response(
+                system_prompt=system_prompt,
+                conversation=conversation,
+                temperature=temperature,
+                closing_stage=closing_stage,
+            ):
+                response += chunk
+                placeholder.markdown(response)
+
             placeholder.markdown(response)
 
-        placeholder.markdown(response)
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": response,
+            }
+        )
 
-    st.session_state.messages.append(
-        {
-            "role": "assistant",
-            "content": response,
-        }
-    )
+        conversation = st.session_state.messages
 
-    conversation = st.session_state.messages
+        next_step = get_next_step(analysis)
 
-    next_step = get_next_step(analysis)
+        st.session_state.analysis = analysis
+        st.session_state.next_step = next_step
 
-    st.session_state.analysis = analysis
-    st.session_state.next_step = next_step
-
-    st.rerun()
+        st.rerun()
 
 with right_col:
 
@@ -376,6 +371,11 @@ with right_col:
 
         st.session_state["generated_proposal"] = proposal
         
+
+# ---------------------------------
+# Footer
+# ---------------------------------
+
 if st.session_state["generated_proposal"]:
 
     st.divider()
@@ -407,11 +407,7 @@ if st.session_state["generated_proposal"]:
         mime="text/csv",
         use_container_width=True,
     )
-
-# ---------------------------------
-# Footer
-# ---------------------------------
-
+    
 st.markdown("---")
 
 st.caption(
