@@ -4,6 +4,14 @@ A production-ready AI Lead Qualification Assistant built with Streamlit and Open
 
 The assistant engages website visitors, qualifies leads through natural conversations, automatically extracts CRM information, scores lead quality, and helps businesses convert more visitors into customers.
 
+# 🚀 Live Demo
+
+Try Project Ignition here:
+
+https://project-ignition-your-ai-lead-assistant.streamlit.app/
+
+No installation required.
+
 ---
 
 ## Features
